@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BALENCIAGA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050505;
+      --surface: #0d0d0d;
+      --card: #111111;
+      --border: #1e1e1e;
+      --accent: #ffffff;
+      --muted: #505050;
+      --glow: rgba(255,255,255,0.04);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+    }
+
+    /* HEADER */
+    header {
+      position: relative;
+      border-bottom: 1px solid var(--border);
+      padding: 56px 40px 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 50%; transform: translateX(-50%);
+      width: 500px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+      animation: shimmer 5s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.1; }
+      50% { opacity: 1; }
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(80px, 12vw, 150px);
+      letter-spacing: 0.22em;
+      line-height: 1;
+      background: linear-gradient(180deg, #ffffff 20%, #555555 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      user-select: none;
+      animation: fadeDown 0.9s ease both;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .tagline {
+      font-size: 9px;
+      letter-spacing: 0.55em;
+      color: var(--muted);
+      text-transform: uppercase;
+      animation: fadeDown 0.9s 0.15s ease both;
+    }
+
+    /* MAIN */
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 80px 32px 120px;
+    }
+
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 0.55em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* GAME TABS */
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .game-tab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 28px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--accent);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, padding-left 0.25s;
+      animation: fadeUp 0.5s ease both;
+      cursor: pointer;
+    }
+
+    .game-tab:nth-child(2) { animation-delay: 0.08s; }
+    .game-tab:nth-child(3) { animation-delay: 0.16s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .game-tab::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 0;
+      background: rgba(255,255,255,0.025);
+      transition: width 0.35s ease;
+    }
+
+    .game-tab:hover::before { width: 100%; }
+    .game-tab:hover { border-color: #2e2e2e; padding-left: 38px; }
+
+    .tab-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .tab-num {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      min-width: 28px;
+    }
+
+    .tab-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.18em;
+    }
+
+    .tab-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .tab-tag {
+      font-size: 8px;
+      letter-spacing: 0.35em;
+      color: var(--muted);
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      display: none;
+    }
+
+    .game-tab:hover .tab-tag { display: block; }
+
+    .tab-arrow {
+      font-size: 12px;
+      color: var(--muted);
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .game-tab:hover .tab-arrow { color: #fff; transform: translateX(5px); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      letter-spacing: 0.35em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    footer .logo-sm {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 0.35em;
+      color: #222;
+    }
+
+    .chat-btn {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 1000;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      background: var(--bg);
+      transition: color 0.2s, border-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chat-btn:hover { color: #fff; border-color: #333; }
+
+    .chat-btn-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #4caf50;
+      box-shadow: 0 0 6px #4caf50;
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    @media (max-width: 600px) {
+      main { padding: 48px 18px 80px; }
+      .tab-name { font-size: 22px; }
+      footer { flex-direction: column; gap: 10px; text-align: center; }
+      .chat-btn { top: 14px; right: 14px; padding: 8px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="chat.html" class="chat-btn">
+    <span class="chat-btn-dot"></span>
+    Global Chat
+  </a>
+
+  <header>
+    <div class="logo">Balenciaga</div>
+    <div class="tagline">Game Portal — Season 01</div>
+  </header>
+
+  <main>
+    <div class="section-label">Games</div>
+
+    <div class="game-list">
+
+      <a href="games/hollow-knight.html" class="game-tab" target="_blank">
+        <div class="tab-left">
+          <span class="tab-num">001</span>
+          <span class="tab-name">Hollow Knight</span>
+        </div>
+        <div class="tab-right">
+          <span class="tab-tag">Adventure</span>
+          <span class="tab-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="games/clover-pit.html" class="game-tab" target="_blank">
+        <div class="tab-left">
+          <span class="tab-num">002</span>
+          <span class="tab-name">CloverPit</span>
+        </div>
+        <div class="tab-right">
+          <span class="tab-tag">Action</span>
+          <span class="tab-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="games/fnae.html" class="game-tab" target="_blank">
+        <div class="tab-left">
+          <span class="tab-num">003</span>
+          <span class="tab-name">Five Nights at Big E</span>
+        </div>
+        <div class="tab-right">
+          <span class="tab-tag">Horror</span>
+          <span class="tab-arrow">→</span>
+        </div>
+      </a>
+
+    </div>
+  </main>
+
+  <footer>
+    <span>© 2026 Balenciaga</span>
+    <span class="logo-sm">BALENCIAGA</span>
+    <span>Season 01</span>
+  </footer>
+
+</body>
+</html>
