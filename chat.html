@@ -208,7 +208,7 @@
       <div class="user-info">Chatting as <span id="name-display"></span></div>
       <button class="change-btn" id="change-btn">Change Name</button>
     </div>
-    <div class="counter" id="counter">0 / 80 messages</div>
+    <div class="counter" id="counter">0 / 60 messages</div>
     <div id="messages">
       <div class="empty" id="empty-state">
         <div class="empty-title">No Messages Yet</div>
@@ -227,7 +227,7 @@
 <script>
   const DB          = 'https://balenciaga-chat-default-rtdb.firebaseio.com';
   const PATH        = '/messages';
-  const MAX         = 80;
+  const MAX         = 60;
   const POLL_MS     = 2500;
 
   // ── Cookie helpers ──
@@ -310,7 +310,10 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
   function fmtTime(ts) {
-    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const d = new Date(ts);
+    const date = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `${date} ${time}`;
   }
 
   // ── Render one message ──
@@ -342,9 +345,9 @@
     const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
     if (nearBottom) messagesEl.scrollTop = messagesEl.scrollHeight;
 
-    // update counter (count only non-system messages visible)
-    const total = seenKeys.size;
-    counterEl.textContent = `${total} / ${MAX} messages`;
+    // update counter — count only chat messages (not system)
+    const chatCount = messagesEl.querySelectorAll('.msg').length;
+    counterEl.textContent = `${chatCount} / ${MAX} messages`;
   }
 
   // ── Firebase REST push ──
@@ -364,13 +367,14 @@
   // ── Firebase REST poll ──
   async function poll() {
     try {
-      const r = await fetch(`${DB}${PATH}.json?orderBy="ts"&limitToLast=${MAX}`);
+      // Fetch last 60 entries by key (no index needed)
+      const r = await fetch(`${DB}${PATH}.json?limitToLast=${MAX}`);
       if (!r.ok) throw new Error();
       const data = await r.json();
 
       if (data) {
         Object.entries(data)
-          .sort((a, b) => a[1].ts - b[1].ts)
+          .sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0))
           .forEach(([k, m]) => { if (m && m.ts) renderMsg(k, m); });
       }
 
