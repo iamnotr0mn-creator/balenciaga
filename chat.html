@@ -49,18 +49,16 @@
 
     .header-right { display: flex; align-items: center; gap: 8px; font-size: 8px; letter-spacing: 0.3em; color: var(--muted2); text-transform: uppercase; }
     .live-dot { width: 5px; height: 5px; border-radius: 50%; background: #4caf50; box-shadow: 0 0 6px #4caf50; animation: blink 2s ease-in-out infinite; }
-
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
     /* NAME GATE */
     #name-gate {
       flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; padding: 40px 32px; gap: 0;
+      align-items: center; justify-content: center; padding: 40px 32px;
     }
-
     .gate-title { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 0.2em; margin-bottom: 6px; }
     .gate-sub { font-size: 9px; letter-spacing: 0.4em; color: var(--muted2); text-transform: uppercase; margin-bottom: 32px; }
-    .gate-error { font-size: 9px; letter-spacing: 0.2em; color: #c0392b; min-height: 1em; margin-bottom: 8px; }
+    .gate-error { font-size: 9px; letter-spacing: 0.2em; color: #c0392b; min-height: 14px; margin-bottom: 8px; }
 
     .gate-input {
       width: 100%; max-width: 300px;
@@ -87,7 +85,6 @@
       display: flex; align-items: center; justify-content: space-between;
       flex-shrink: 0; background: var(--surface);
     }
-
     .user-info { font-size: 9px; letter-spacing: 0.2em; color: var(--muted2); }
     .user-info span { color: #fff; }
 
@@ -130,10 +127,8 @@
     .msg-text { font-size: 12px; color: #aaa; line-height: 1.7; word-break: break-word; letter-spacing: 0.03em; }
 
     .msg-system {
-      padding: 6px 0;
-      font-size: 9px; letter-spacing: 0.25em; color: #333;
-      text-align: center; text-transform: uppercase;
-      border-bottom: 1px solid var(--border);
+      padding: 6px 0; font-size: 9px; letter-spacing: 0.25em; color: #2a2a2a;
+      text-align: center; text-transform: uppercase; border-bottom: 1px solid var(--border);
     }
 
     .empty {
@@ -143,7 +138,7 @@
     .empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.2em; color: #1e1e1e; }
     .empty-sub { font-size: 8px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--muted); }
 
-    /* STATUS BAR */
+    /* STATUS */
     .status-bar {
       font-size: 8px; letter-spacing: 0.3em; color: var(--muted);
       padding: 5px 28px; border-top: 1px solid var(--border);
@@ -162,8 +157,7 @@
       flex: 1; background: var(--input-bg); border: 1px solid var(--border2);
       color: #fff; font-family: 'Space Mono', monospace; font-size: 12px;
       padding: 11px 14px; outline: none; transition: border-color 0.2s;
-      letter-spacing: 0.05em; resize: none; min-height: 42px; max-height: 120px;
-      line-height: 1.5;
+      letter-spacing: 0.05em; resize: none; min-height: 42px; max-height: 120px; line-height: 1.5;
     }
     #msg-input::placeholder { color: var(--muted); }
     #msg-input:focus { border-color: #2e2e2e; }
@@ -225,24 +219,19 @@
 </div>
 
 <script>
-  const DB      = 'https://balenciaga-chat-default-rtdb.firebaseio.com';
-  const PATH    = '/messages';
-  const MAX     = 60;
-  const POLL_MS = 2500;
+  // ── Config — exact exploiton method ──
+  const DB            = 'https://balenciaga-chat-default-rtdb.firebaseio.com';
+  const PATH          = '/messages';
+  const POLL_INTERVAL = 2500;
+  const LOAD_LAST     = 60;
 
-  // ── Cookie helpers ──
-  function setCookie(k, v, days = 365) {
-    document.cookie = `${k}=${encodeURIComponent(v)};expires=${new Date(Date.now()+days*864e5).toUTCString()};path=/;SameSite=Lax`;
-  }
-  function getCookie(k) {
-    const m = document.cookie.match(new RegExp('(?:^|; )'+k.replace(/([.$?*|{}()[\]\\/+^])/g,'\\$1')+'=([^;]*)'));
-    return m ? decodeURIComponent(m[1]) : null;
-  }
+  // ── Cookies ──
+  function setCookie(k,v,days=365){ document.cookie=`${k}=${encodeURIComponent(v)};expires=${new Date(Date.now()+days*864e5).toUTCString()};path=/;SameSite=Lax`; }
+  function getCookie(k){ const m=document.cookie.match(new RegExp('(?:^|; )'+k.replace(/([.$?*|{}()[\]\\/+^])/g,'\\$1')+'=([^;]*)'));return m?decodeURIComponent(m[1]):null; }
 
   // ── State ──
-  let myName  = getCookie('blnc-name') || null;
-  let lastSnapshot = ''; // JSON string of last poll result for change detection
-  let polling = null;
+  let currentUser = getCookie('blnc-name') || null;
+  let seenKeys    = new Set();
 
   // ── DOM ──
   const nameGate    = document.getElementById('name-gate');
@@ -260,184 +249,162 @@
   const statusBar   = document.getElementById('status-bar');
 
   // ── Status ──
-  function setStatus(msg, cls = '') {
-    statusBar.textContent = '● ' + msg;
-    statusBar.className = 'status-bar ' + cls;
+  function setStatus(msg, cls=''){
+    statusBar.textContent = '● '+msg;
+    statusBar.className   = 'status-bar '+cls;
   }
 
-  // ── Name gate ──
-  function validateName(n) {
-    if (!n)           return 'Name cannot be empty.';
-    if (n.length < 2) return 'At least 2 characters.';
-    if (!/^[a-zA-Z0-9_.\- ]+$/.test(n)) return 'Letters, numbers, _ . - only.';
+  // ── Name validation ──
+  function validateName(n){
+    if(!n)          return 'Name cannot be empty.';
+    if(n.length<2)  return 'At least 2 characters.';
+    if(n.length>24) return 'Max 24 characters.';
+    if(!/^[a-zA-Z0-9_.\- ]+$/.test(n)) return 'Only letters, numbers, _ . - allowed.';
     return null;
   }
 
-  async function enterChat(rawName) {
-    const name = rawName.trim();
-    const err  = validateName(name);
-    if (err) { gateError.textContent = err; return; }
+  async function submitName(){
+    const val = nameInput.value.trim();
+    const err = validateName(val);
+    if(err){ gateError.textContent=err; return; }
     gateError.textContent = '';
-
-    const isNew = name !== myName;
-    myName = name;
-    setCookie('blnc-name', name);
-    nameDisplay.textContent = name;
+    const isNew = val !== currentUser;
+    currentUser = val;
+    setCookie('blnc-name', val);
+    nameDisplay.textContent = val;
     nameGate.style.display  = 'none';
     chatView.style.display  = 'flex';
     unlock();
-
-    if (isNew) await pushMsg({ type: 'system', text: `${name} joined the chat` });
+    if(isNew) await push({ type:'system', text:`${val} joined the chat` });
     await poll();
   }
 
-  nameBtn.onclick = () => enterChat(nameInput.value);
-  nameInput.onkeydown = e => { if (e.key === 'Enter') enterChat(nameInput.value); };
+  nameBtn.addEventListener('click', submitName);
+  nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
 
-  changeBtn.onclick = () => {
+  changeBtn.addEventListener('click', ()=>{
     lock();
     chatView.style.display = 'none';
     nameGate.style.display = 'flex';
-    nameInput.value = myName || '';
+    nameInput.value = currentUser || '';
     gateError.textContent = '';
-    nameInput.focus();
-  };
+    setTimeout(()=>nameInput.focus(), 80);
+  });
 
-  function unlock() { msgInput.disabled = false; sendBtn.disabled = false; msgInput.focus(); }
-  function lock()   { msgInput.disabled = true;  sendBtn.disabled = true; }
+  function unlock(){ msgInput.disabled=false; sendBtn.disabled=false; msgInput.focus(); }
+  function lock()  { msgInput.disabled=true;  sendBtn.disabled=true; }
 
   // ── Helpers ──
-  function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-  function fmtTime(ts) {
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function fmtTime(ts){
     const d = new Date(ts);
-    const date = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    return `${date} · ${time}`;
+    return d.toLocaleDateString([],{month:'short',day:'numeric'}) + ' · ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }
 
-  // ── Full re-render all messages ──
-  function renderAll(entries) {
-    // Save scroll position — only auto-scroll if near bottom
-    const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 150;
-
-    // Clear everything except the empty state placeholder
-    messagesEl.innerHTML = '';
-
-    if (entries.length === 0) {
-      messagesEl.appendChild(emptyState);
-      emptyState.style.display = 'flex';
-      counterEl.textContent = `0 / ${MAX} messages`;
-      return;
-    }
+  // ── Render one message — exact exploiton append-only method ──
+  function renderMsg(key, msg){
+    if(seenKeys.has(key)) return;
+    seenKeys.add(key);
 
     emptyState.style.display = 'none';
-    let chatCount = 0;
 
-    entries.forEach(([, msg]) => {
-      const div = document.createElement('div');
+    const div = document.createElement('div');
 
-      if (msg.type === 'system') {
-        div.className = 'msg-system';
-        div.textContent = msg.text;
-      } else {
-        chatCount++;
-        div.className = 'msg';
-        // support both old SDK field 'name' and any future 'author' field
-        const author = msg.name || msg.author || 'unknown';
-        const isMe   = author === myName;
-        div.innerHTML = `
-          <div class="msg-top">
-            <span class="msg-author ${isMe ? 'me' : ''}">${esc(author)}</span>
-            <span class="msg-time">${fmtTime(msg.ts)}</span>
-          </div>
-          <div class="msg-text">${esc(msg.text)}</div>
-        `;
-      }
+    if(msg.type === 'system'){
+      div.className = 'msg-system';
+      div.textContent = msg.text;
+    } else {
+      div.className = 'msg';
+      const author = msg.author || msg.name || 'unknown';
+      const isMe   = author === currentUser;
+      div.innerHTML = `
+        <div class="msg-top">
+          <span class="msg-author ${isMe?'me':''}">${esc(author)}</span>
+          <span class="msg-time">${fmtTime(msg.ts)}</span>
+        </div>
+        <div class="msg-text">${esc(msg.text)}</div>
+      `;
+    }
 
-      messagesEl.appendChild(div);
-    });
+    messagesEl.appendChild(div);
 
-    counterEl.textContent = `${chatCount} / ${MAX} messages`;
-    if (nearBottom) messagesEl.scrollTop = messagesEl.scrollHeight;
+    const chatCount = messagesEl.querySelectorAll('.msg').length;
+    counterEl.textContent = `${chatCount} / ${LOAD_LAST} messages`;
+
+    const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
+    if(nearBottom) messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  // ── Firebase REST push ──
-  async function pushMsg(msg) {
+  // ── Firebase push — exact exploiton method ──
+  async function push(msg){
     try {
       const r = await fetch(`${DB}${PATH}.json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...msg, ts: Date.now() })
+        method:  'POST',
+        headers: {'Content-Type':'application/json'},
+        body:    JSON.stringify({...msg, ts: Date.now()})
       });
-      if (!r.ok) throw new Error();
+      if(!r.ok) throw new Error();
     } catch {
       setStatus('send failed — check connection', 'error');
     }
   }
 
-  // ── Firebase REST poll — full re-render every time ──
-  async function poll() {
+  // ── Poll — exact exploiton method (orderBy ts + limitToLast) ──
+  async function poll(){
     try {
-      const r = await fetch(`${DB}${PATH}.json?limitToLast=${MAX}`);
-      if (!r.ok) throw new Error();
+      const r = await fetch(`${DB}${PATH}.json?orderBy="ts"&limitToLast=${LOAD_LAST}`);
+      if(!r.ok) throw new Error();
       const data = await r.json();
-
-      const snap = JSON.stringify(data);
-
-      // Only re-render if data actually changed (avoids flicker)
-      if (snap !== lastSnapshot) {
-        lastSnapshot = snap;
-        const entries = data
-          ? Object.entries(data)
-              .filter(([, m]) => m && m.ts)
-              .sort((a, b) => a[1].ts - b[1].ts)
-          : [];
-        renderAll(entries);
+      if(data){
+        Object.entries(data)
+          .sort((a,b) => a[1].ts - b[1].ts)
+          .forEach(([k,m]) => { if(m && m.ts) renderMsg(k, m); });
       }
-
+      if(seenKeys.size === 0){
+        emptyState.style.display = 'flex';
+      }
       setStatus('connected — live', 'connected');
     } catch {
       setStatus('connection error — retrying...', 'error');
     }
   }
 
-  function startPolling() {
+  // ── Start polling — exact exploiton method ──
+  function startPolling(){
     poll();
-    polling = setInterval(poll, POLL_MS);
+    setInterval(poll, POLL_INTERVAL);
   }
 
-  // ── Send ──
-  async function sendMessage() {
-    if (!myName) return;
+  // ── Send — exact exploiton method ──
+  async function sendMessage(){
+    if(!currentUser) return;
     const text = msgInput.value.trim();
-    if (!text) return;
+    if(!text) return;
     msgInput.value = '';
     msgInput.style.height = 'auto';
-    await pushMsg({ type: 'chat', name: myName, text });
-    await poll(); // instant feedback
+    await push({ type:'chat', author: currentUser, text });
+    await poll();
   }
 
-  sendBtn.onclick = sendMessage;
-  msgInput.onkeydown = e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  };
-  msgInput.addEventListener('input', () => {
+  sendBtn.addEventListener('click', sendMessage);
+  msgInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+  });
+  msgInput.addEventListener('input', ()=>{
     msgInput.style.height = 'auto';
-    msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+    msgInput.style.height = Math.min(msgInput.scrollHeight, 120)+'px';
   });
 
-  // ── Boot ──
+  // ── Boot — exact exploiton method ──
   startPolling();
 
-  if (myName) {
-    nameDisplay.textContent = myName;
+  if(currentUser){
+    nameDisplay.textContent = currentUser;
     nameGate.style.display  = 'none';
     chatView.style.display  = 'flex';
     unlock();
   } else {
-    nameInput.focus();
+    setTimeout(()=>nameInput.focus(), 80);
   }
 </script>
 </body>
