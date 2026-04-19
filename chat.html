@@ -85,18 +85,15 @@
       background: var(--bg);
     }
     .nav-container {
-      max-width: 800px; margin: 0 auto;
       padding: 0 40px;
-      display: flex; align-items: center; justify-content: space-between;
-      height: 62px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; height: 62px;
     }
     .nav-logo {
-      font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.22em;
-      background: linear-gradient(180deg, #fff 20%, #555 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      text-decoration: none;
+      font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 0.22em;
+      color: #fff; text-decoration: none;
     }
-    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links { display: flex; align-items: center; gap: 28px; position: absolute; right: 40px; }
     .nav-link {
       font-size: 9px; letter-spacing: 0.45em; color: var(--muted);
       text-decoration: none; text-transform: uppercase;
